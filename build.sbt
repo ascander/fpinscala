@@ -1,12 +1,17 @@
 lazy val commonSettings = Seq(
   name                            := "fpinscala",
-  scalaVersion                    := "2.11.11",
+  scalaVersion                    := "2.12.4",
   resolvers                       += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
   parallelExecution in Test       := false,
   connectInput                    := true,
   updateOptions                   := updateOptions.value.withCachedResolution(true),
   scalacOptions                   := commonScalacOptions,
-  scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value filterNot (_ == "-Xfatal-warnings"))
+
+  // Ease up on compiler switches sometimes
+  scalacOptions in (Compile, doc)     := (scalacOptions in (Compile, doc)).value filterNot (_ == "-Xfatal-warnings"),
+  scalacOptions in (Compile, console) := (scalacOptions in (Compile, console)).value filterNot (_ == "-Ywarn-unused:imports"),
+  scalacOptions in (Test, console)    := (scalacOptions in (Compile, console)).value
+)
 
 ///////////////////////////////////////////////////////////
 // Project definitions
@@ -14,57 +19,64 @@ lazy val commonSettings = Seq(
 lazy val root = Project("fpinscala", file("." + "fpinscala")).in(file("."))
   .aggregate(exercises, answers)
   .settings(commonSettings: _*)
-  .settings(warnUnusedImport: _*)
-  .settings(inlineWarnings: _*)
   .settings(nio2checkSettings: _*)
 
 lazy val exercises = project.in(file("exercises"))
   .settings(commonSettings: _*)
-  .settings(warnUnusedImport: _*)
-  .settings(inlineWarnings: _*)
 
 lazy val answers = project.in(file("answers"))
   .settings(commonSettings: _*)
-  .settings(warnUnusedImport: _*)
-  .settings(inlineWarnings: _*)
 
 ///////////////////////////////////////////////////////////
 // Scala compiler settings
 
 lazy val commonScalacOptions = Seq(
-  "-deprecation",
-  "-encoding", "UTF-8",
-  "-feature",
-  "-language:existentials",
-  "-language:higherKinds",
-  "-language:implicitConversions",
-  "-language:experimental.macros",
-  "-unchecked",
-  "-Xlint",
-  "-Yno-adapted-args",
-  "-Ywarn-numeric-widen",
-  "-Ywarn-value-discard",
-  "-Ywarn-dead-code",
-  "-Xfuture"
+  "-deprecation",                      // Emit warning and location for usages of deprecated APIs.
+  "-encoding", "utf-8",                // Specify character encoding used by source files.
+  "-explaintypes",                     // Explain type errors in more detail.
+  "-feature",                          // Emit warning and location for usages of features that should be imported explicitly.
+  "-language:existentials",            // Existential types (besides wildcard types) can be written and inferred
+  "-language:experimental.macros",     // Allow macro definition (besides implementation and application)
+  "-language:higherKinds",             // Allow higher-kinded types
+  "-language:implicitConversions",     // Allow definition of implicit functions called views
+  "-unchecked",                        // Enable additional warnings where generated code depends on assumptions.
+  "-Xcheckinit",                       // Wrap field accessors to throw an exception on uninitialized access.
+  // "-Xfatal-warnings",                  // Fail the compilation if there are any warnings.
+  "-Xfuture",                          // Turn on future language features.
+  "-Xlint:adapted-args",               // Warn if an argument list is modified to match the receiver.
+  "-Xlint:by-name-right-associative",  // By-name parameter of right associative operator.
+  "-Xlint:constant",                   // Evaluation of a constant arithmetic expression results in an error.
+  "-Xlint:delayedinit-select",         // Selecting member of DelayedInit.
+  "-Xlint:doc-detached",               // A Scaladoc comment appears to be detached from its element.
+  "-Xlint:inaccessible",               // Warn about inaccessible types in method signatures.
+  "-Xlint:infer-any",                  // Warn when a type argument is inferred to be `Any`.
+  "-Xlint:missing-interpolator",       // A string literal appears to be missing an interpolator id.
+  "-Xlint:nullary-override",           // Warn when non-nullary `def f()' overrides nullary `def f'.
+  "-Xlint:nullary-unit",               // Warn when nullary methods return Unit.
+  "-Xlint:option-implicit",            // Option.apply used implicit view.
+  "-Xlint:package-object-classes",     // Class or object defined in package object.
+  "-Xlint:poly-implicit-overload",     // Parameterized overloaded implicit methods are not visible as view bounds.
+  "-Xlint:private-shadow",             // A private field (or class parameter) shadows a superclass field.
+  "-Xlint:stars-align",                // Pattern sequence wildcard must align with sequence component.
+  "-Xlint:type-parameter-shadow",      // A local type parameter shadows a type already in scope.
+  "-Xlint:unsound-match",              // Pattern match may not be typesafe.
+  "-Yno-adapted-args",                 // Do not adapt an argument list (either by inserting () or creating a tuple) to match the receiver.
+  "-Ypartial-unification",             // Enable partial unification in type constructor inference
+  "-Ywarn-dead-code",                  // Warn when dead code is identified.
+  "-Ywarn-extra-implicit",             // Warn when more than one implicit parameter section is defined.
+  "-Ywarn-inaccessible",               // Warn about inaccessible types in method signatures.
+  "-Ywarn-infer-any",                  // Warn when a type argument is inferred to be `Any`.
+  "-Ywarn-nullary-override",           // Warn when non-nullary `def f()' overrides nullary `def f'.
+  "-Ywarn-nullary-unit",               // Warn when nullary methods return Unit.
+  "-Ywarn-numeric-widen",              // Warn when numerics are widened.
+  "-Ywarn-unused:implicits",           // Warn if an implicit parameter is unused.
+  "-Ywarn-unused:imports",             // Warn if an import selector is not referenced.
+  "-Ywarn-unused:locals",              // Warn if a local definition is unused.
+  "-Ywarn-unused:params",              // Warn if a value parameter is unused.
+  "-Ywarn-unused:patvars",             // Warn if a variable bound in a pattern is unused.
+  "-Ywarn-unused:privates",            // Warn if a private member is unused.
+  "-Ywarn-value-discard"               // Warn when non-Unit expression results are unused.
 )
-
-lazy val warnUnusedImport = Seq(
-  scalacOptions ++= {
-    CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, n)) if n >= 11 => Seq("-Ywarn-unused-import")
-      case _                       => Seq()
-    }
-  },
-   scalacOptions in (Compile, console) := (scalacOptions in (Compile, console)).value filterNot (_ == "-Ywarn-unused-import"),
-   scalacOptions in (Test, console)    := (scalacOptions in (Compile, console)).value)
-
-lazy val inlineWarnings = Seq(
-  scalacOptions ++= {
-    CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, 12)) => Seq()
-      case _             => Seq("-Yinline-warnings")
-    }
-  })
 
 ///////////////////////////////////////////////////////////
 // Miscellaneous settings
@@ -88,3 +100,4 @@ def nio2check(): String = {
 // Command aliases
 
 addCommandAlias("validate", ";scalastyle;test")
+addCommandAlias("initEnsime", ";test:compile;ensimeConfig;ensimeConfigProject;ensimeServerIndex")
